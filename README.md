@@ -57,9 +57,11 @@ class ApplicationConfig {
 const config = load<ApplicationConfig>({
   validate: (value: ApplicationConfig) => {
     const errors = validateSync(plainToClass(ApplicationConfig, value));
-    if (errors.length > 0) {
-      throw new Error(errors.map((it) => it.toString()))
+    if (errors.length === 0) {
+      return value;
     }
+
+    throw new Error(errors.map((it) => it.toString()))
   },
 });
 ```
