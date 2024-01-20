@@ -36,9 +36,9 @@ jobs:
           compat-lookup: true
           github-token: "${{ secrets.GITHUB_TOKEN }}"
       - name: Echo compatibility score
-        run: echo ${{ steps.dependabot-metadata.outputs.compatibility-score }}
+        run: echo ${{ steps.metadata.outputs.compatibility-score }}
       - name: Enable auto-merge for Dependabot PRs
-        if: ${{ steps.dependabot-metadata.outputs.compatibility-score >= 90 }}
+        if: ${{ steps.metadata.outputs.compatibility-score >= 90 }}
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
