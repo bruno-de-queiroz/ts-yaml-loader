@@ -1,4 +1,4 @@
-import * as yaml from 'js-yaml';
+import * as YAML from 'yamljs';
 import { readFileSync } from 'fs';
 import { OptionsInput } from './options.input';
 
@@ -28,7 +28,7 @@ export function load<T>(options?: OptionsInput<T>): T {
     return {} as T;
   };
 
-  const configData = yaml.load(expand(readFileSync(envFile, 'utf8'))) as T;
+  const configData = YAML.parse(expand(readFileSync(envFile, 'utf8'))) as T;
   try {
     return validateFn(requiredFn(path ? configData[path] : configData));
   } catch (e) {
