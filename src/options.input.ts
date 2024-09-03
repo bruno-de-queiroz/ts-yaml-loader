@@ -15,4 +15,8 @@ export interface OptionsInput<T> {
    * The validation method that will be called to validate the data
    */
   validate?: (value: T) => T;
+  /**
+   * Expand environment variables or not
+   */
+  autoExpand?: boolean;
 }

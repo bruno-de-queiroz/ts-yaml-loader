@@ -13,6 +13,7 @@ export function load<T>(options?: OptionsInput<T>): T {
   const envFile = options?.file || CONFIG_FILE;
   const failOnMissing = options?.failOnMissing ?? true;
   const path = options?.path;
+  const autoExpand = options?.autoExpand ?? true;
   const validateFn = options?.validate || ((data) => data);
   const isDefined = (data: any) => data !== undefined && data !== null;
   const requiredFn = (data: unknown): T => {
@@ -28,7 +29,7 @@ export function load<T>(options?: OptionsInput<T>): T {
     return {} as T;
   };
 
-  const configData = YAML.parse(expand(readFileSync(envFile, 'utf8'))) as T;
+  const configData = YAML.parse(autoExpand ? expand(readFileSync(envFile, 'utf8')) : readFileSync(envFile, 'utf8')) as T;
   try {
     return validateFn(requiredFn(path ? configData[path] : configData));
   } catch (e) {

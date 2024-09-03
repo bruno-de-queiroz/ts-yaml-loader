@@ -219,6 +219,17 @@ dwiAyzKxdj7Ge8a/h9BbR+8A07esmP3hGvX0E8fShOgdXzoo
       expect(config.property).toBe('test');
     });
 
+    it('Must skip expand environment variables if "autoExpand" options is false', () => {
+      // given
+      mocked(readFileSync as jest.Mock).mockReturnValue('property: $test');
+
+      // when
+      const config = load<any>({ autoExpand: false });
+
+      // then
+      expect(config.property).toBe('$test');
+    });
+
     it('Must select sub path of the object if "path" option is set', () => {
       // given
       mocked(readFileSync as jest.Mock).mockReturnValue(
