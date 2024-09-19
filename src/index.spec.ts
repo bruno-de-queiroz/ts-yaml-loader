@@ -78,6 +78,8 @@ describe('ts-yaml-loader', () => {
       ${'${DEFAULT:test}'}
       ${'${default:test}'}
       ${'${default:${NODE_ENV}}'}
+      ${'${default:test${NONE}}'}
+      ${'${default:${NONE}test}'}
     `(
       'Must interpolate to default when env placeholder: "$placeholder" has default',
       ({ placeholder }) => {

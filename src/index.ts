@@ -4,7 +4,7 @@ import { OptionsInput } from './options.input';
 import * as process from 'node:process';
 
 const CONFIG_FILE = process.env.CONFIG_FILE || 'application.yaml';
-const ENV_REGEX = /(?<!\$)\$(([a-z\d_]+)|\{([a-z\d_]+):?([^}]+)?})/gi;
+const ENV_REGEX = /(?<!\$)\$(([a-z\d_]+)|\{([^:}]+)}|\{([^:]+):(.*)})/gi;
 
 /**
  * Load a yaml file and expand the environment variables
@@ -49,7 +49,7 @@ export function load<T>(options?: OptionsInput<T>): T {
 export function expand(blob: string): string {
   const interpolateVariable = (variable: string): string => {
     const [key, ...rest] = variable
-      .replace(/^\$\{?([^}]+)}?/g, '$1')
+      .replace(/^\$\{?(.*)$/g, (_, group) => group.replace(/}$/, ''))
       .split(':');
     return process.env[key.toUpperCase()] || rest.join(':');
   };
