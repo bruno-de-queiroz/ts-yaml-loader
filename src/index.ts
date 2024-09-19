@@ -1,6 +1,7 @@
 import * as YAML from 'yamljs';
 import { readFileSync } from 'fs';
 import { OptionsInput } from './options.input';
+import * as process from 'node:process';
 
 const CONFIG_FILE = process.env.CONFIG_FILE || 'application.yaml';
 const ENV_REGEX = /(?<!\$)\$(([a-z\d_]+)|\{([a-z\d_]+):?([^}]+)?})/gi;
@@ -29,7 +30,11 @@ export function load<T>(options?: OptionsInput<T>): T {
     return {} as T;
   };
 
-  const configData = YAML.parse(autoExpand ? expand(readFileSync(envFile, 'utf8')) : readFileSync(envFile, 'utf8')) as T;
+  const configData = YAML.parse(
+    autoExpand
+      ? expand(readFileSync(envFile, 'utf8'))
+      : readFileSync(envFile, 'utf8'),
+  ) as T;
   try {
     return validateFn(requiredFn(path ? configData[path] : configData));
   } catch (e) {
@@ -53,10 +58,16 @@ export function expand(blob: string): string {
     return str.replace('$$', '$');
   };
 
+  const expandInnerValue = (str: string): string => {
+    return str.replace(/\$\{([^}]+)}/, (_, key) => interpolateVariable(key));
+  };
+
   const interpolateValue = (matched: string): string => {
     const value = interpolateVariable(matched);
     return value.includes('\n') ? `"${value.replace(/\n/g, '\\n')}"` : value;
   };
 
-  return replaceEscapedDollarSigns(blob.replace(ENV_REGEX, interpolateValue));
+  return expandInnerValue(
+    replaceEscapedDollarSigns(blob.replace(ENV_REGEX, interpolateValue)),
+  );
 }

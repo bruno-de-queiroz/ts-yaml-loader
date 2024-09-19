@@ -1,6 +1,7 @@
 import { expand, load } from './index';
 import { readFileSync } from 'fs';
 import mocked = jest.mocked;
+import * as process from 'node:process';
 
 jest.mock('fs');
 
@@ -76,9 +77,12 @@ describe('ts-yaml-loader', () => {
       placeholder
       ${'${DEFAULT:test}'}
       ${'${default:test}'}
+      ${'${default:${NODE_ENV}}'}
     `(
       'Must interpolate to default when env placeholder: "$placeholder" has default',
       ({ placeholder }) => {
+        process.env.NODE_ENV = 'test';
+
         // given
         const value = `property: ${placeholder}`;
 
@@ -153,6 +157,24 @@ describe('ts-yaml-loader', () => {
 
         // then
         expect(interpolated).toEqual('property: ZWkT33c$xpYg@6Q?');
+      },
+    );
+
+    it.each`
+      placeholder
+      ${'${RESPECT_ESCAPED:ZWkT33c:xpYg@6Q?}'}
+      ${'${respect_escaped:ZWkT33c:xpYg@6Q?}'}
+    `(
+      'Must interpolate env placeholder: "$placeholder" respecting : in the default value',
+      ({ placeholder }) => {
+        // given
+        const value = `property: ${placeholder}`;
+
+        // when
+        const interpolated = expand(value);
+
+        // then
+        expect(interpolated).toEqual('property: ZWkT33c:xpYg@6Q?');
       },
     );
 
