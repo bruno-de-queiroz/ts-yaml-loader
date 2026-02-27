@@ -1,119 +1,137 @@
-## Description
+# ts-yaml-loader
 
-Simple library to evaluate yaml files interpolating environment variables, validating and enforcing type safety.
+Type-safe YAML config loader for Node.js with environment variable interpolation and validation.
 
-## Installation
 ```bash
-$ npm i --save bruno-de-queiroz/ts-yaml-loader
+npm i ts-yaml-loader
 ```
 
-## Usage
+## Features
+
+- **Env var interpolation** — `${VAR}`, `$VAR`, `${VAR:default}` syntax with fallback defaults
+- **Type-safe** — full TypeScript generics, get typed config objects from YAML
+- **Validation** — plug in `class-validator` or any custom validation function
+- **Path loading** — load a specific subtree from your YAML
+- **Multiline support** — handles certificates, keys, and multiline values
+- **Zero config** — loads `application.yaml` by default, override with `CONFIG_FILE` env var
+
+## Quick start
 
 ```yaml
 # application.yaml
 port: 3000
-
+database:
+  host: ${DB_HOST:localhost}
+  port: ${DB_PORT:5432}
+  name: ${DB_NAME:myapp}
 observability:
-  version: ${npm_package_version:1.0.0}
-
-swagger:
-  title: Test api
-  description: APIs available for integrations
-  tags:
-    - api
+  version: ${npm_package_version:0.0.0}
 ```
+
 ```typescript
-// main.ts
-class ApplicationConfig {
-  readonly port: string;
-  readonly observability: { version: string };
-  readonly swagger: {
-    title: string;
-    description: string;
-    tags: string[];
-  };
+import { load } from 'ts-yaml-loader';
+
+interface AppConfig {
+  port: number;
+  database: { host: string; port: number; name: string };
+  observability: { version: string };
 }
 
-const config = load<ApplicationConfig>();
+const config = load<AppConfig>();
+// config.database.host -> "localhost" (or DB_HOST env var)
 ```
 
-Usage with `class-validator` and `class-transformer` decorators and validations
+## Env var syntax
+
+| Syntax | Behavior |
+|---|---|
+| `${VAR_NAME}` | Replace with env var, empty string if missing |
+| `$VAR_NAME` | Short form, same behavior |
+| `${VAR:default}` | Use default if env var is missing |
+| `${VAR:value:with:colons}` | Colons in defaults work fine |
+| `$$ESCAPED` | Literal `$ESCAPED` (no interpolation) |
+
+Variable lookup is **case-insensitive** — `${db_host}` and `${DB_HOST}` resolve the same.
+
+## Validation with class-validator
+
 ```typescript
-// main
-class ApplicationConfig {
+import { load } from 'ts-yaml-loader';
+import { IsNotEmpty, IsNumber, ValidateNested, validateSync } from 'class-validator';
+import { plainToClass, Type } from 'class-transformer';
+
+class DatabaseConfig {
   @IsNotEmpty()
+  host: string;
+
   @IsNumber()
-  readonly port: string;
-
-  @ValidateNested()
-  @Type(() => ObservabilityConfig)
-  readonly observability: ObservabilityConfig;
-
-  @ValidateNested()
-  @Type(() => SwaggerConfig)
-  readonly swagger: SwaggerConfig;
+  port: number;
 }
 
-const config = load<ApplicationConfig>({
-  validate: (value: ApplicationConfig) => {
-    const errors = validateSync(plainToClass(ApplicationConfig, value));
-    if (errors.length === 0) {
-      return value;
-    }
+class AppConfig {
+  @IsNumber()
+  port: number;
 
-    throw new Error(errors.map((it) => it.toString()))
+  @ValidateNested()
+  @Type(() => DatabaseConfig)
+  database: DatabaseConfig;
+}
+
+const config = load<AppConfig>({
+  validate: (value) => {
+    const instance = plainToClass(AppConfig, value);
+    const errors = validateSync(instance);
+    if (errors.length > 0) {
+      throw new Error(errors.map((e) => e.toString()).join('\n'));
+    }
+    return value;
   },
 });
 ```
-## Options and methods
+
+## API
+
+### `load<T>(options?): T`
+
+Loads and parses a YAML file, interpolates env vars, and returns a typed object.
 
 ```typescript
-interface ConfigOptions<T> {
-  /**
-   * The path of the property in the yaml file to be loaded
-   */
-  path?: string;
-  /**
-   * The file path for the yaml file to be loaded
-   */
-  file?: string;
-  /**
-   * The validation method that will be called to validate the data
-   */
-  validate?: (value: T) => T;
-  /**
-   * If true will remove the variables from process.env
-   */
-  strict?: boolean;
+interface OptionsInput<T> {
+  file?: string;            // YAML file path (default: "application.yaml")
+  path?: string;            // Load a nested property (e.g., "database")
+  failOnMissing?: boolean;  // Throw if data is missing (default: true)
+  autoExpand?: boolean;     // Interpolate env vars (default: true)
+  validate?: (value: T) => T; // Custom validation function
 }
 ```
 
-* `load<T>(config?: ConfigOptions)` loads by default the `application.yaml` and uses `expand` to interpolate environment variables
+**Examples:**
 
-* `expand(blob: string)` interpolates environment variables in a string
+```typescript
+// Load specific section
+const db = load<DatabaseConfig>({ path: 'database' });
 
-## Development
+// Custom file
+const config = load<AppConfig>({ file: './config/production.yaml' });
 
-```bash
-# development
-$ npm run build
+// Skip env var expansion
+const raw = load<AppConfig>({ autoExpand: false });
+
+// Graceful fallback on missing data
+const config = load<AppConfig>({ failOnMissing: false });
 ```
 
-## Test
+### `expand(blob: string): string`
 
-```bash
-# unit tests
-$ npm run test
+Standalone env var interpolation for any string.
+
+```typescript
+import { expand } from 'ts-yaml-loader';
+
+const result = expand('Hello ${USER:world}');
+// -> "Hello <username>" or "Hello world"
 ```
 
-## Commit convention
+## License
 
-- See https://www.conventionalcommits.org/en/v1.0.0/#summary
-
-## Versioning
-
-- See https://semver.org/
-
-## Auto-versioning based on commit messages
-
-- See https://github.com/semantic-release/semantic-release
+MIT

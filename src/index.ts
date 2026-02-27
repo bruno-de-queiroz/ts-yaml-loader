@@ -1,4 +1,4 @@
-import * as YAML from 'yamljs';
+import * as yaml from 'js-yaml';
 import { readFileSync } from 'fs';
 import { OptionsInput } from './options.input';
 import * as process from 'node:process';
@@ -30,15 +30,13 @@ export function load<T>(options?: OptionsInput<T>): T {
     return {} as T;
   };
 
-  const configData = YAML.parse(
-    autoExpand
-      ? expand(readFileSync(envFile, 'utf8'))
-      : readFileSync(envFile, 'utf8'),
-  ) as T;
+  const raw = readFileSync(envFile, 'utf8');
+  const configData = yaml.load(autoExpand ? expand(raw) : raw) as T;
   try {
     return validateFn(requiredFn(path ? configData[path] : configData));
   } catch (e) {
-    throw new Error(`Failed to initialize config is not valid: ${e.message}`);
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`Failed to initialize config is not valid: ${msg}`);
   }
 }
 
@@ -55,11 +53,11 @@ export function expand(blob: string): string {
   };
 
   const replaceEscapedDollarSigns = (str: string): string => {
-    return str.replace('$$', '$');
+    return str.replace(/\$\$/g, '$');
   };
 
   const expandInnerValue = (str: string): string => {
-    return str.replace(/\$\{([^}]+)}/, (_, key) => interpolateVariable(key));
+    return str.replace(/\$\{([^}]+)}/g, (_, key) => interpolateVariable(key));
   };
 
   const interpolateValue = (matched: string): string => {

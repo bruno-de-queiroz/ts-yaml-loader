@@ -36,13 +36,12 @@
     "test:ci": "jest --ci --coverage"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0",
-    "yamljs": "^0.3.0"
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@types/jest": "30.0.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.0.0",
-    "@types/yamljs": "^0.2.34",
     "@typescript-eslint/eslint-plugin": "^8.4.0",
     "@typescript-eslint/parser": "^8.4.0",
     "eslint": "^10.0.0",
