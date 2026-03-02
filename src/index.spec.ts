@@ -315,6 +315,20 @@ dwiAyzKxdj7Ge8a/h9BbR+8A07esmP3hGvX0E8fShOgdXzoo
       }).toThrow('Failed to initialize config, the data is missing or invalid');
     });
 
+    it('Must fail with non-Error thrown by validation', () => {
+      // given
+      mocked(readFileSync as jest.Mock).mockReturnValue('property: test');
+
+      // when
+      expect(() => {
+        load<{ property: string }>({
+          validate: () => {
+            throw 'raw string error';
+          },
+        });
+      }).toThrow('Failed to initialize config is not valid: raw string error');
+    });
+
     it('Must fail if the validation returns an error', () => {
       // given
       mocked(readFileSync as jest.Mock).mockReturnValue('another: test');
