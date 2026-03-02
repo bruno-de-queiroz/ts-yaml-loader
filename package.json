@@ -18,7 +18,19 @@
   },
   "keywords": [
     "yaml",
-    "config"
+    "config",
+    "configuration",
+    "typescript",
+    "environment-variables",
+    "env",
+    "dotenv",
+    "yaml-config",
+    "type-safe",
+    "validation",
+    "interpolation",
+    "js-yaml",
+    "config-loader", 
+    "nodejs"
   ],
   "author": "Bruno de Queiroz",
   "license": "MIT",
@@ -104,3 +116,4 @@
     ]
   }
 }
+
